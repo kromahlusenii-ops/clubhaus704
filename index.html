@@ -260,6 +260,18 @@ const focus = ring();
 let focusTarget = null, focusSize = 0.4;
 function setFocus(obj, size=0.4){ focusTarget = obj; focusSize = size; focus.visible = !!obj; }
 
+// a yellow ring + "TAP" tag that sits over a part, so it's unmistakable what to tap
+function tapHint(){
+  const c = document.createElement('canvas'); c.width = 160; c.height = 220; const g = c.getContext('2d');
+  g.strokeStyle = '#E8B33A'; g.lineWidth = 12; g.beginPath(); g.arc(80,146,58,0,Math.PI*2); g.stroke();
+  g.fillStyle = 'rgba(26,34,48,0.92)'; g.fillRect(16,4,128,42);
+  g.fillStyle = '#F2EAD9'; g.font = '700 28px "Geist Mono", ui-monospace, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('TAP', 80, 25);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c), transparent:true, depthTest:false}));
+  sp.center.set(0.5, 146/220); sp.renderOrder = 9; sp.scale.set(0.15, 0.15*220/160, 1);
+  return sp;
+}
+
 // axis helpers: side = across the car, len = along it
 function at(side, len, y){ const v = new THREE.Vector3(); v[geo.sideAxis] = side; v[geo.lengthAxis] = len; v.y = y; return v; }
 function sideVec(sign){ return at(sign, 0, 0); }
@@ -354,12 +366,13 @@ function buildProps(){
   if (S === 'z') hub.rotation.y = Math.PI/2;
   pad(hub, 0.2, 'hub', hub);
   // five lug nuts on the wheel face (ride with the car)
-  P.nuts = [];
+  P.nuts = []; P.nutHints = [];
   for (let i=0;i<5;i++){
     const a = i/5*Math.PI*2 + Math.PI/2; const n = hexNut(); faceAcross(n);
     n.position.copy(t.pos); n.position[S] = hubX; n.position.y += Math.sin(a)*0.065; n.position[L] += Math.cos(a)*0.065;
     n.userData = {i, home:n.position.clone(), state:0}; reg(car, n); P.nuts.push(n);
     tappable(n, 'nut', n, {i}); pad(n, 0.034, 'nut', n, {i});
+    const hint = tapHint(); hint.position.copy(n.position); reg(car, hint); P.nutHints.push(hint);
   }
   // hubcap tray for the nuts, lug wrench, jack, chocks (on the floor)
   reg(props, new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.14,0.03,32), M.cream), 'tray').position.copy(at(side*1.35, t.pos[L] + geo.frontSign*0.2, 0.015));
@@ -487,6 +500,12 @@ const toastEl = $('toast'); let toastT;
 function toast(msg){ toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>toastEl.classList.remove('show'), 1800); }
 function wheelGlow(on){ P.wheel.traverse(o => { if (o.isMesh && o.material.emissive) { o.material.emissive.setHex(on ? 0xE8B33A : 0); o.material.emissiveIntensity = 0.05; }; }); }
 function nutsToTray(){ P.nuts.forEach((n,i) => { n.position.copy(P.tray.position).add(new THREE.Vector3((i-2)*0.05, 0.03, 0)).sub(car.position); n.rotation.set(0,0,0); n.visible = true; }); }
+// show the "TAP" ring on every untapped nut when the task is tap-in-any-order (loosen/remove).
+// during the ordered star-pattern step the pulsing focus ring points at the one correct nut instead, so hints stay off.
+function updateNutHints(){
+  const showAll = taskState && (taskState.kind === 'loosen' || taskState.kind === 'remove');
+  P.nutHints.forEach((h,i) => { h.visible = !!showAll && P.nuts[i].visible && !P.nuts[i].userData.state; });
+}
 
 /* camera presets as [position, target], in car terms (side, length, height) */
 const rearL = () => -geo.frontSign*(geo.carLen/2 - 0.95);
@@ -735,6 +754,7 @@ function frame(){
   const dt = Math.min(clock.getDelta(), 0.1);
   stepTweens(dt); controls.update();
   if (clipPlanes.length) clipPlanes[0].constant = 0.8 + car.position.y;
+  if (P.nutHints) updateNutHints();
   if (focusTarget && focus.visible){ focusTarget.getWorldPosition(tmp); focus.position.copy(tmp); const pulse = focusSize * (1 + 0.12*Math.sin(performance.now()/300)); focus.scale.set(pulse,pulse,1); }
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
