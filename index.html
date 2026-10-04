@@ -268,6 +268,17 @@ function tapHint(){
   sp.renderOrder = 9; sp.scale.set(0.058, 0.058, 1);
   return sp;
 }
+// one small "TAP" caption for a whole group of ringed parts, so it only has to say it once
+function tapLabel(){
+  const c = document.createElement('canvas'); c.width = 160; c.height = 80; const g = c.getContext('2d');
+  g.fillStyle = 'rgba(26,34,48,0.92)'; g.fillRect(4,4,152,72);
+  g.strokeStyle = '#E8B33A'; g.lineWidth = 4; g.strokeRect(4,4,152,72);
+  g.fillStyle = '#F2EAD9'; g.font = '700 42px "Geist Mono", ui-monospace, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('TAP', 80, 42);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c), transparent:true, depthTest:false}));
+  sp.renderOrder = 9; sp.scale.set(0.09, 0.045, 1);
+  return sp;
+}
 
 // axis helpers: side = across the car, len = along it
 function at(side, len, y){ const v = new THREE.Vector3(); v[geo.sideAxis] = side; v[geo.lengthAxis] = len; v.y = y; return v; }
@@ -371,6 +382,7 @@ function buildProps(){
     tappable(n, 'nut', n, {i}); pad(n, 0.034, 'nut', n, {i});
     const hint = tapHint(); hint.position.copy(n.position); reg(car, hint); P.nutHints.push(hint);
   }
+  P.nutTapLabel = tapLabel(); P.nutTapLabel.position.copy(t.pos); P.nutTapLabel.position[S] = hubX; reg(car, P.nutTapLabel);
   // hubcap tray for the nuts, lug wrench, jack, chocks (on the floor)
   reg(props, new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.14,0.03,32), M.cream), 'tray').position.copy(at(side*1.35, t.pos[L] + geo.frontSign*0.2, 0.015));
   const wrench = new THREE.Group(); const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.42,10), M.steel); arm.rotation.x = Math.PI/2; wrench.add(arm);
@@ -501,7 +513,9 @@ function nutsToTray(){ P.nuts.forEach((n,i) => { n.position.copy(P.tray.position
 // during the ordered star-pattern step the pulsing focus ring points at the one correct nut instead, so hints stay off.
 function updateNutHints(){
   const showAll = taskState && (taskState.kind === 'loosen' || taskState.kind === 'remove');
-  P.nutHints.forEach((h,i) => { h.visible = !!showAll && P.nuts[i].visible && !P.nuts[i].userData.state; });
+  let anyLeft = false;
+  P.nutHints.forEach((h,i) => { const v = !!showAll && P.nuts[i].visible && !P.nuts[i].userData.state; h.visible = v; anyLeft = anyLeft || v; });
+  if (P.nutTapLabel) P.nutTapLabel.visible = anyLeft;
 }
 
 /* camera presets as [position, target], in car terms (side, length, height) */
