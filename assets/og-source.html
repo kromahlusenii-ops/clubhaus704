@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@font-face{font-family:'Inter Tight';font-weight:400;src:url('../fonts/inter-tight-latin-400-normal.woff2') format('woff2')}
+@font-face{font-family:'Inter Tight';font-weight:600;src:url('../fonts/inter-tight-latin-600-normal.woff2') format('woff2')}
+@font-face{font-family:'Inter Tight';font-weight:700;src:url('../fonts/inter-tight-latin-700-normal.woff2') format('woff2')}
+@font-face{font-family:'Inter Tight';font-weight:800;src:url('../fonts/inter-tight-latin-800-normal.woff2') format('woff2')}
+@font-face{font-family:'Geist Mono';font-weight:400;src:url('../fonts/geist-mono-latin-400-normal.woff2') format('woff2')}
+@font-face{font-family:'Geist Mono';font-weight:500;src:url('../fonts/geist-mono-latin-500-normal.woff2') format('woff2')}
+
+:root{
+  --navy:#26303F; --navy-deep:#1A2230; --navy-line:#3A4658;
+  --cream:#F2EAD9; --cream-dim:#B8B2A4; --gold:#E8B33A; --teal:#4F8A92; --rust:#C0573A;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1200px;height:630px;overflow:hidden;background:var(--navy-deep)}
+.wrap{
+  position:relative;width:1200px;height:630px;
+  background:
+    radial-gradient(900px 500px at 85% -10%, rgba(232,179,58,0.14), transparent 60%),
+    radial-gradient(700px 500px at -5% 110%, rgba(79,138,146,0.18), transparent 60%),
+    linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%);
+  font-family:'Inter Tight', system-ui, sans-serif;
+  color:var(--cream);
+}
+/* painted bay lines across the floor, like the app's garage */
+.bay-lines{
+  position:absolute; left:0; right:0; bottom:0; height:230px;
+  background-image: repeating-linear-gradient(90deg, rgba(232,179,58,0.55) 0 6px, transparent 6px 220px);
+  background-position: -40px 40px;
+  transform: perspective(500px) rotateX(55deg);
+  transform-origin: bottom;
+  opacity:0.5;
+}
+.grid{
+  position:absolute; inset:0;
+  background-image: linear-gradient(var(--navy-line) 1px, transparent 1px), linear-gradient(90deg, var(--navy-line) 1px, transparent 1px);
+  background-size:60px 60px;
+  opacity:0.18;
+}
+.content{
+  position:relative; z-index:2;
+  height:100%; display:flex; flex-direction:column; justify-content:center;
+  padding:0 88px;
+}
+.eyebrow{
+  font-family:'Geist Mono', monospace; font-weight:500; font-size:20px; letter-spacing:0.18em;
+  text-transform:uppercase; color:var(--gold); margin-bottom:28px;
+}
+.eyebrow::before{content:"● "; color:var(--rust)}
+h1{
+  font-weight:800; font-size:124px; line-height:0.98; letter-spacing:-0.01em;
+  margin-bottom:22px;
+}
+h1 .dot{color:var(--gold)}
+.sub{
+  font-weight:600; font-size:40px; color:var(--cream-dim); letter-spacing:0.01em;
+}
+.foot{
+  position:absolute; left:88px; bottom:54px; z-index:2;
+  font-family:'Geist Mono', monospace; font-size:18px; color:var(--cream-dim); letter-spacing:0.04em;
+  display:flex; align-items:center; gap:14px;
+}
+.foot .tag{
+  border:1.5px solid var(--navy-line); border-radius:999px; padding:6px 16px;
+  color:var(--teal); font-weight:500;
+}
+.corner{
+  position:absolute; right:88px; bottom:54px; z-index:2;
+  font-family:'Geist Mono', monospace; font-size:18px; color:var(--navy-line);
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="grid"></div>
+  <div class="bay-lines"></div>
+  <div class="content">
+    <div class="eyebrow">cars &amp; black coffee</div>
+    <h1>clubhaus704<span class="dot">.</span></h1>
+    <div class="sub">digital workshop</div>
+  </div>
+  <div class="foot"><span class="tag">change a tire</span><span class="tag">change the oil</span></div>
+  <div class="corner">1975 porsche 911 turbo</div>
+</div>
+</body>
+</html>

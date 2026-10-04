@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clubhaus704</title>
+<meta name="description" content="Interactive 3D walkthrough for kids: change a tire and change the oil on a 1975 Porsche 911 Turbo. Sparkhouse x paidnfull, Cars & Black Coffee at Clubhaus704.">
+<meta property="og:title" content="Clubhaus704 — digital workshop">
+<meta property="og:description" content="Interactive 3D walkthrough: change a tire and change the oil on a 1975 Porsche 911 Turbo. Cars & Black Coffee at Clubhaus704.">
+<meta property="og:image" content="assets/og-image.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Clubhaus704 — digital workshop">
+<meta name="twitter:description" content="Interactive 3D walkthrough: change a tire and change the oil on a 1975 Porsche 911 Turbo.">
+<meta name="twitter:image" content="assets/og-image.png">
+<style>html{color-scheme:dark}body{margin:0}</style>
+<style>
+@font-face{font-family:'Inter Tight';font-weight:300;font-display:swap;src:url('fonts/inter-tight-latin-300-normal.woff2') format('woff2')}
+@font-face{font-family:'Inter Tight';font-weight:400;font-display:swap;src:url('fonts/inter-tight-latin-400-normal.woff2') format('woff2')}
+@font-face{font-family:'Inter Tight';font-weight:600;font-display:swap;src:url('fonts/inter-tight-latin-600-normal.woff2') format('woff2')}
+@font-face{font-family:'Inter Tight';font-weight:700;font-display:swap;src:url('fonts/inter-tight-latin-700-normal.woff2') format('woff2')}
+@font-face{font-family:'Inter Tight';font-weight:800;font-display:swap;src:url('fonts/inter-tight-latin-800-normal.woff2') format('woff2')}
+@font-face{font-family:'Geist Mono';font-weight:400;font-display:swap;src:url('fonts/geist-mono-latin-400-normal.woff2') format('woff2')}
+@font-face{font-family:'Geist Mono';font-weight:500;font-display:swap;src:url('fonts/geist-mono-latin-500-normal.woff2') format('woff2')}
+/* Layout: a garage bay. The 3D car fills the room, a lesson card sits beside it on desktop and below it on phones. One committed dark look, same as the event overlays. */
+:root{
+  --navy:#26303F; --navy-deep:#1A2230; --navy-line:#3A4658;
+  --cream:#F2EAD9; --cream-dim:#B8B2A4; --gold:#E8B33A; --teal:#4F8A92; --rust:#C0573A; --ok:#7DB26B;
+  --display:"Inter Tight", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono:"Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+html,body{height:100%}
+body{margin:0;background:var(--navy-deep);color:var(--cream);font-family:var(--display);font-size:16px;line-height:1.4;-webkit-font-smoothing:antialiased;overflow:hidden}
+*{box-sizing:border-box}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+#app{height:100%;display:grid;grid-template-rows:auto 1fr;}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-bottom:1px solid var(--navy-line);background:var(--navy);flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px;font-weight:800;letter-spacing:-.04em;font-size:22px;line-height:1}
+.brand .dot{color:var(--gold)}
+.brand small{font-family:var(--mono);font-weight:400;font-size:11px;letter-spacing:.18em;color:var(--cream-dim);text-transform:uppercase}
+.lessons{display:flex;gap:6px;background:var(--navy-deep);padding:4px;border-radius:999px}
+.lessons button{padding:8px 16px;border-radius:999px;font-weight:600;font-size:14px;color:var(--cream-dim);min-height:36px}
+.lessons button[aria-pressed="true"]{background:var(--cream);color:var(--navy-deep)}
+
+main{display:grid;grid-template-columns:1fr 400px;min-height:0}
+#stage{position:relative;min-height:0;background:radial-gradient(120% 80% at 50% 70%,#2E3A4C 0%,var(--navy-deep) 70%)}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none}
+#hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim);background:rgba(26,34,48,.75);padding:6px 12px;border-radius:14px;max-width:92%;text-align:center;line-height:1.4;pointer-events:none}
+#loading{position:absolute;inset:0;display:grid;place-items:center;text-align:center;background:var(--navy-deep);z-index:2;padding:24px}
+#loading .bar{width:min(320px,70vw);height:4px;background:var(--navy-line);border-radius:2px;overflow:hidden;margin:14px auto 0}
+#loading .bar i{display:block;height:100%;width:0;background:var(--gold);transition:width .2s}
+#loading p{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--cream-dim);margin:0}
+#loading h2{margin:0;font-size:28px;font-weight:800;letter-spacing:-.04em}
+.toast{position:absolute;top:14px;left:50%;transform:translateX(-50%);background:var(--cream);color:var(--navy-deep);font-weight:600;padding:8px 14px;border-radius:8px;font-size:14px;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%;text-align:center}
+.toast.show{opacity:1}
+
+aside{display:flex;flex-direction:column;min-height:0;border-left:1px solid var(--navy-line);background:var(--navy)}
+.steps{display:flex;gap:4px;padding:14px 20px 0}
+.steps i{flex:1;height:4px;background:var(--navy-line);border-radius:2px}
+.steps i.done{background:var(--teal)}
+.steps i.now{background:var(--gold)}
+.card{padding:18px 20px;display:flex;flex-direction:column;gap:12px;overflow:auto;min-height:0;flex:1}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--cream-dim)}
+.card h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.04em;line-height:1.05;text-wrap:balance}
+.card p{margin:0;font-size:17px;font-weight:300;line-height:1.45;max-width:60ch}
+.card p b{font-weight:600}
+.note{border-left:3px solid var(--gold);padding:8px 12px;background:rgba(232,179,58,.08);font-size:14px;line-height:1.4}
+.note .eyebrow{color:var(--gold);margin-bottom:4px}
+.task{display:flex;align-items:center;gap:12px;background:var(--navy-deep);border:1px solid var(--navy-line);border-radius:10px;padding:12px 14px}
+.task .ring{width:38px;height:38px;flex:none;border-radius:50%;border:3px solid var(--gold);display:grid;place-items:center;font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums}
+.task.done .ring{border-color:var(--ok);background:var(--ok);color:var(--navy-deep)}
+.task div{font-size:14px;line-height:1.35}
+.task div b{display:block;font-weight:600;font-size:15px}
+.tools{display:flex;flex-wrap:wrap;gap:6px}
+.tools span{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;padding:6px 10px;border:1px solid var(--navy-line);border-radius:6px;color:var(--cream)}
+.nav{display:flex;gap:10px;padding:14px 20px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--navy-line);align-items:center}
+.nav .ghost{padding:12px 16px;border-radius:10px;border:1px solid var(--navy-line);font-weight:600;min-height:46px}
+.nav .next{flex:1;padding:12px 18px;border-radius:10px;background:var(--gold);color:var(--navy-deep);font-weight:800;font-size:17px;letter-spacing:-.02em;min-height:46px}
+.nav .next[disabled]{background:var(--navy-line);color:var(--cream-dim);cursor:not-allowed}
+.nav .skip{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--cream-dim);padding:10px 6px;text-decoration:underline;text-underline-offset:3px}
+
+.quiz{display:flex;flex-direction:column;gap:10px}
+.quiz button{text-align:left;padding:12px 14px;border:1px solid var(--navy-line);border-radius:10px;font-size:15px;line-height:1.3;background:var(--navy-deep)}
+.quiz button.right{border-color:var(--ok);background:rgba(125,178,107,.15)}
+.quiz button.wrong{border-color:var(--rust);background:rgba(192,87,58,.15)}
+.score{font-size:48px;font-weight:800;letter-spacing:-.05em;line-height:1}
+.credit{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--cream-dim);padding:0 20px 10px}
+.credit a{color:var(--cream-dim)}
+
+@media (max-width:900px){
+  main{grid-template-columns:1fr;grid-template-rows:minmax(240px,46vh) 1fr}
+  aside{border-left:0;border-top:1px solid var(--navy-line)}
+  .card h1{font-size:24px}
+  .card p{font-size:15px}
+  header{padding:10px 16px}
+  .brand{font-size:19px}
+  .brand small{display:none}
+}
+@media (prefers-reduced-motion:reduce){ .toast{transition:none} }
+</style>
+
+<div id="app">
+  <header>
+    <div class="brand"><span>sparkhouse<span class="dot">.</span></span><span style="font-family:var(--mono);font-weight:400;font-size:12px;color:var(--cream-dim)">X</span><span>paidnfull<span class="dot">.</span></span><small>clubhaus704</small></div>
+    <div class="lessons" role="tablist" aria-label="Lesson">
+      <button id="tabTire" role="tab" aria-pressed="true">Change a tire</button>
+      <button id="tabOil" role="tab" aria-pressed="false">Change the oil</button>
+    </div>
+  </header>
+  <main>
+    <section id="stage" aria-label="3D garage">
+      <div id="loading"><div><h2>Rolling the 911 in<span style="color:var(--gold)">.</span></h2><div class="bar"><i id="loadBar"></i></div><p id="loadText">loading 3d model</p></div></div>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+      <div id="hint">drag to orbit · pinch or scroll to zoom · tap glowing parts</div>
+    </section>
+    <aside>
+      <div class="steps" id="dots"></div>
+      <div class="card" id="card"></div>
+      <div class="nav">
+        <button class="ghost" id="back">Back</button>
+        <button class="skip" id="skip" hidden>skip</button>
+        <button class="next" id="next">Next</button>
+      </div>
+      <div class="credit">3D model: Porsche 911 (930) Turbo 1975 by <a href="https://sketchfab.com/Lexyc16" target="_blank" rel="noopener">Lexyc16</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>. Design is Porsche AG's.</div>
+    </aside>
+  </main>
+</div>
+
+<script src="lib/three.min.js"></script>
+<script src="lib/GLTFLoader.js"></script>
+<script src="lib/OrbitControls.js"></script>
+<script src="lib/RoomEnvironment.js"></script>
+<script>
+(function(){
+'use strict';
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = id => document.getElementById(id);
+
+/* ---------- renderer / scene ---------- */
+THREE.ColorManagement.legacyMode = false; // hex colors are sRGB, convert them properly
+const stage = $('stage');
+const renderer = new THREE.WebGLRenderer({antialias:true, alpha:false, powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputEncoding = THREE.sRGBEncoding;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+renderer.localClippingEnabled = true;
+renderer.physicallyCorrectLights = true;
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1f2937);
+scene.fog = new THREE.Fog(0x1f2937, 14, 30);
+const pmrem = new THREE.PMREMGenerator(renderer);
+{ const room = new THREE.RoomEnvironment(); room.traverse(o => { if (o.isLight) o.intensity *= 0.8; if (o.material && o.material.isMeshBasicMaterial) o.material.color.multiplyScalar(0.8); if (o.material && o.material.emissive) o.material.emissiveIntensity = (o.material.emissiveIntensity ?? 1) * 0.35; }); scene.environment = pmrem.fromScene(room, 0.04).texture; }
+
+const camera = new THREE.PerspectiveCamera(38, 1, 0.05, 80);
+camera.position.set(5.5, 2.2, 5.5);
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.enablePan = false; controls.minDistance = 1.2; controls.maxDistance = 12;
+controls.maxPolarAngle = Math.PI * 0.62; // can peek under the car
+controls.target.set(0, 0.6, 0);
+
+scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x1a2230, 0.5));
+const key = new THREE.DirectionalLight(0xfff1d6, 1.4); key.position.set(4, 7, 3); scene.add(key);
+const fill = new THREE.DirectionalLight(0x9fc4ff, 0.4); fill.position.set(-5, 3, -4); scene.add(fill);
+
+// floor: a soft contact shadow disc on a concrete slab
+{
+  const c = document.createElement('canvas'); c.width = c.height = 512;
+  const g = c.getContext('2d'); const grad = g.createRadialGradient(256,256,40,256,256,256);
+  grad.addColorStop(0,'rgba(0,0,0,.55)'); grad.addColorStop(0.6,'rgba(0,0,0,.25)'); grad.addColorStop(1,'rgba(0,0,0,0)');
+  g.fillStyle = grad; g.fillRect(0,0,512,512);
+  const tex = new THREE.CanvasTexture(c);
+  const shadow = new THREE.Mesh(new THREE.PlaneGeometry(7.5, 4.6), new THREE.MeshBasicMaterial({map:tex, transparent:true, depthWrite:false}));
+  shadow.rotation.x = -Math.PI/2; shadow.position.y = 0.004; scene.add(shadow);
+  const slab = new THREE.Mesh(new THREE.CircleGeometry(16, 64), new THREE.MeshStandardMaterial({color:0x3a4658, roughness:0.95, metalness:0, envMapIntensity:0.6}));
+  slab.rotation.x = -Math.PI/2; scene.add(slab);
+  // painted bay lines
+  const lineMat = new THREE.MeshBasicMaterial({color:0xE8B33A, transparent:true, opacity:0.35});
+  [-3.1, 3.1].forEach(z => { const l = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 0.06), lineMat); l.rotation.x = -Math.PI/2; l.position.set(0, 0.002, z); scene.add(l); });
+  [-3.2, 3.2].forEach(x => { const l = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 6.26), lineMat); l.rotation.x = -Math.PI/2; l.position.set(x, 0.002, 0); scene.add(l); });
+}
+
+function resize(){
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(stage); resize();
+
+/* ---------- tiny tween engine ---------- */
+const tweens = [];
+const ease = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+function tween(obj, to, dur, opts={}){
+  if (reduceMotion) dur = Math.min(dur, 0.05);
+  const from = {}; for (const k in to) from[k] = obj[k];
+  return new Promise(res => tweens.push({obj, from, to, dur, t:0, onUpdate:opts.onUpdate, res, delay:opts.delay||0}));
+}
+function tweenV3(v, to, dur, opts){ return tween(v, {x:to.x, y:to.y, z:to.z}, dur, opts); }
+function stepTweens(dt){
+  for (let i = tweens.length-1; i >= 0; i--){
+    const tw = tweens[i];
+    if (tw.delay > 0){ tw.delay -= dt; continue; }
+    tw.t = Math.min(1, tw.t + dt / tw.dur); const e = ease(tw.t);
+    for (const k in tw.to) tw.obj[k] = tw.from[k] + (tw.to[k]-tw.from[k]) * e;
+    if (tw.onUpdate) tw.onUpdate(e);
+    if (tw.t >= 1){ tweens.splice(i,1); tw.res(); }
+  }
+}
+function flyTo(pos, target, dur=1.3){
+  for (let i = tweens.length-1; i >= 0; i--) if (tweens[i].obj === camera.position || tweens[i].obj === controls.target){ tweens[i].res(); tweens.splice(i,1); }
+  controls.enabled = false;
+  const p1 = tweenV3(camera.position, pos, dur), p2 = tweenV3(controls.target, target, dur);
+  return Promise.all([p1,p2]).then(()=>{ controls.enabled = true; });
+}
+
+/* ---------- props we add around the car ---------- */
+const car = new THREE.Group(); scene.add(car);         // the model, recentred. things bolted to the car live here
+const props = new THREE.Group(); scene.add(props);     // things on the floor (jack, pan, stands) live here
+const M = {
+  steel: new THREE.MeshStandardMaterial({color:0x9aa3ad, metalness:0.9, roughness:0.35}),
+  dark:  new THREE.MeshStandardMaterial({color:0x2b2f36, metalness:0.3, roughness:0.7}),
+  red:   new THREE.MeshStandardMaterial({color:0x8F3320, metalness:0.2, roughness:0.55}),
+  gold:  new THREE.MeshStandardMaterial({color:0xE8B33A, metalness:0.4, roughness:0.4}),
+  teal:  new THREE.MeshStandardMaterial({color:0x4F8A92, metalness:0.1, roughness:0.6}),
+  cream: new THREE.MeshStandardMaterial({color:0xF2EAD9, metalness:0, roughness:0.6}),
+  oil:   new THREE.MeshStandardMaterial({color:0x2a1d0c, metalness:0.6, roughness:0.15}),
+  oilNew:new THREE.MeshStandardMaterial({color:0xc9a23a, metalness:0.3, roughness:0.2, transparent:true, opacity:0.9}),
+  wood:  new THREE.MeshStandardMaterial({color:0xE8B33A, roughness:0.8}),
+  pad:   new THREE.MeshBasicMaterial({transparent:true, opacity:0, depthWrite:false}),
+};
+Object.values(M).forEach(m => { if (m.isMeshStandardMaterial) m.envMapIntensity = 1; });
+const hot = [];        // tappable meshes (each carries userData.tap, and userData.ref for the object it stands for)
+const allProps = [];   // everything we can show/hide
+const P = {};          // named props
+let geo = {};          // car facts: side axis, front sign, wheel positions
+let modelRoot = null;
+
+function reg(parent, obj, name){ parent.add(obj); allProps.push(obj); if (name) P[name] = obj; return obj; }
+function tappable(obj, tag, ref, extra){ obj.traverse(o => { if (o.isMesh){ o.userData.tap = tag; o.userData.ref = ref || obj; Object.assign(o.userData, extra||{}); hot.push(o); } }); }
+function pad(parent, r, tag, ref, extra){ const m = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), M.pad); parent.add(m); m.userData = Object.assign({tap:tag, ref:ref||parent}, extra||{}); hot.push(m); return m; }
+function hexNut(r=0.02, h=0.02, mat=M.steel){ return new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 6), mat); }
+function wedge(){
+  const s = new THREE.Shape(); s.moveTo(0,0); s.lineTo(0.22,0); s.lineTo(0,0.14); s.lineTo(0,0);
+  const g = new THREE.ExtrudeGeometry(s, {depth:0.18, bevelEnabled:false}); g.translate(0,0,-0.09);
+  return new THREE.Mesh(g, M.wood);
+}
+function ring(color=0xE8B33A){
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  g.strokeStyle = '#'+color.toString(16).padStart(6,'0'); g.lineWidth = 10; g.beginPath(); g.arc(64,64,52,0,Math.PI*2); g.stroke();
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c), transparent:true, depthTest:false}));
+  sp.renderOrder = 10; sp.visible = false; scene.add(sp); return sp;
+}
+const focus = ring();
+let focusTarget = null, focusSize = 0.4;
+function setFocus(obj, size=0.4){ focusTarget = obj; focusSize = size; focus.visible = !!obj; }
+
+// axis helpers: side = across the car, len = along it
+function at(side, len, y){ const v = new THREE.Vector3(); v[geo.sideAxis] = side; v[geo.lengthAxis] = len; v.y = y; return v; }
+function sideVec(sign){ return at(sign, 0, 0); }
+function lenVec(sign){ return at(0, sign, 0); }
+const spinAxis = () => geo.sideAxis === 'z' ? 'y' : 'x';     // euler component that spins a nut whose axis points across the car
+function faceAcross(obj){ if (geo.sideAxis === 'z') obj.rotation.set(Math.PI/2,0,0); else obj.rotation.set(0,0,Math.PI/2); }
+// where is the car's surface at this spot? cast a ray up from the floor (underside) or down from above (top)
+const surfRay = new THREE.Raycaster(); const carMeshes = [];
+function surfaceY(side, len, fromAbove){
+  surfRay.set(at(side, len, fromAbove ? 5 : -1), new THREE.Vector3(0, fromAbove ? -1 : 1, 0));
+  const h = surfRay.intersectObjects(carMeshes, false); return h.length ? h[0].point.y : (fromAbove ? geo.carTop : 0.18);
+}
+
+/* ---------- load the model ---------- */
+const loader = new THREE.GLTFLoader();
+// the model ships as JSON with its binary chunk base64 inside; we rebuild a GLB in memory and hand it to the loader,
+// so nothing has to be fetched from a data: url
+(async function loadModel(){
+  try {
+    const res = await fetch('model/porsche_930.json');
+    if (!res.ok) throw new Error('http ' + res.status);
+    const total = +res.headers.get('content-length') || 0; const reader = res.body.getReader(); const chunks = []; let got = 0;
+    for (;;){ const {done, value} = await reader.read(); if (done) break; chunks.push(value); got += value.length;
+      $('loadText').textContent = total ? Math.round(got/total*100) + '%' : 'loading ' + (got/1048576).toFixed(1) + ' mb'; $('loadBar').style.width = (total ? got/total*100 : Math.min(95, got/6.2e6*100)) + '%'; }
+    const text = new TextDecoder().decode(concat(chunks)); const j = JSON.parse(text);
+    const b64 = j.buffers[0].uri.split(',')[1]; delete j.buffers[0].uri;
+    const bin = Uint8Array.from(atob(b64), ch => ch.charCodeAt(0));
+    const jsonBytes = new TextEncoder().encode(JSON.stringify(j)); const jp = (4 - jsonBytes.length % 4) % 4, bp = (4 - bin.length % 4) % 4;
+    const totalLen = 12 + 8 + jsonBytes.length + jp + 8 + bin.length + bp;
+    const glb = new ArrayBuffer(totalLen), dv = new DataView(glb), u8 = new Uint8Array(glb);
+    dv.setUint32(0, 0x46546C67, true); dv.setUint32(4, 2, true); dv.setUint32(8, totalLen, true);
+    dv.setUint32(12, jsonBytes.length + jp, true); dv.setUint32(16, 0x4E4F534A, true); u8.set(jsonBytes, 20); for (let i=0;i<jp;i++) u8[20+jsonBytes.length+i] = 0x20;
+    const bo = 20 + jsonBytes.length + jp; dv.setUint32(bo, bin.length + bp, true); dv.setUint32(bo+4, 0x004E4942, true); u8.set(bin, bo+8);
+    $('loadText').textContent = 'building the car';
+    loader.parse(glb, 'model/', onModel, err => { $('loadText').textContent = 'the model could not be read. reload the page.'; console.error(err); });
+  } catch (err){ $('loadText').textContent = 'the model could not load. check your connection and reload.'; console.error(err); }
+})();
+function concat(chunks){ const n = chunks.reduce((a,c)=>a+c.length,0), out = new Uint8Array(n); let o = 0; chunks.forEach(c => { out.set(c, o); o += c.length; }); return out; }
+
+function onModel(gltf){
+  const root = gltf.scene; modelRoot = root;
+  root.traverse(o => {
+    if (o.isMesh){
+      carMeshes.push(o);
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach(m => {
+        if (m.transmission > 0){ m.transmission = 0; m.transparent = true; m.opacity = 0.35; m.depthWrite = false; }
+        m.envMapIntensity = 1.0;
+      });
+    }
+  });
+  let bodyMesh = null, most = 0; root.traverse(o => { if (o.isMesh && o.geometry.attributes.position.count > most){ most = o.geometry.attributes.position.count; bodyMesh = o; } });
+  if (bodyMesh){ const pm = bodyMesh.material; pm.color.setHex(0xC41E22); pm.map = null; pm.metalness = Math.min(pm.metalness ?? 0.2, 0.25); pm.roughness = Math.max(0.3, Math.min(pm.roughness ?? 0.4, 0.45)); if ('clearcoat' in pm){ pm.clearcoat = 1; pm.clearcoatRoughness = 0.08; } pm.needsUpdate = true; }
+  root.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(root), size = new THREE.Vector3(); box.getSize(size);
+  const length = Math.max(size.x, size.z), s = 4.29 / length;
+  root.scale.setScalar(s); root.updateMatrixWorld(true);
+  box.setFromObject(root); const c = new THREE.Vector3(); box.getCenter(c);
+  root.position.set(-c.x, -box.min.y, -c.z); car.add(root); root.updateMatrixWorld(true);
+  box.setFromObject(root); box.getSize(size);
+
+  const wheels = [], v = new THREE.Vector3(); let mirror = null;
+  root.traverse(o => { if (/^Circle/.test(o.name)) wheels.push(o); if (o.name === 'Cube.007_17') mirror = o; });
+  const wb = new THREE.Box3();
+  const wInfo = wheels.map(w => { wb.setFromObject(w); const p = new THREE.Vector3(); wb.getCenter(p); const sz = new THREE.Vector3(); wb.getSize(sz); return {node:w, pos:p, size:sz}; });
+  const lengthAxis = size.x > size.z ? 'x' : 'z', sideAxis = lengthAxis === 'x' ? 'z' : 'x';
+  let frontSign = 1, mirrorSide = 1;
+  if (mirror){ wb.setFromObject(mirror); wb.getCenter(v); frontSign = Math.sign(v[lengthAxis]) || 1; mirrorSide = Math.sign(v[sideAxis]) || 1; }
+  wInfo.forEach(w => { w.front = Math.sign(w.pos[lengthAxis]) === frontSign; w.side = Math.sign(w.pos[sideAxis]) || 1; });
+  const target = wInfo.find(w => w.front && w.side === mirrorSide) || wInfo[0];
+  const opposite = wInfo.find(w => !w.front && w.side !== target.side) || wInfo[1];
+  geo = { lengthAxis, sideAxis, frontSign, target, opposite, wheelR: target.size.y/2, wheelW: target.size[sideAxis], carTop: box.max.y, carLen: Math.max(size.x,size.z), carW: Math.min(size.x,size.z) };
+
+  const rig = new THREE.Group(); rig.position.copy(target.pos); car.add(rig); rig.attach(target.node);
+  P.wheelRig = rig; P.wheel = target.node; P.wheelHome = target.pos.clone();
+  target.node.traverse(o => { if (o.isMesh){ o.material = o.material.clone(); } });
+  tappable(target.node, 'wheel', rig);
+
+  buildEngineBay(); buildProps(); hideAll();
+  $('loading').remove();
+  startLesson('tire');
+}
+
+function buildProps(){
+  const t = geo.target, side = t.side, L = geo.lengthAxis, S = geo.sideAxis;
+  const hubX = t.pos[S] + side*(geo.wheelW/2 + 0.005);
+  // hub, brake disc and studs behind the wheel (ride with the car)
+  const hub = new THREE.Group(); hub.position.copy(t.pos); hub.position[S] += side*0.02; reg(car, hub, 'hub');
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.025, 48), M.dark); disc.rotation.z = Math.PI/2; hub.add(disc);
+  const hubCap = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.06, 32), M.steel); hubCap.rotation.z = Math.PI/2; hub.add(hubCap);
+  for (let i=0;i<5;i++){ const a = i/5*Math.PI*2 + Math.PI/2; const stud = new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.008,0.09,8), M.steel); stud.rotation.z = Math.PI/2; stud.position.set(0, Math.sin(a)*0.065, Math.cos(a)*0.065); hub.add(stud); }
+  if (S === 'z') hub.rotation.y = Math.PI/2;
+  pad(hub, 0.2, 'hub', hub);
+  // five lug nuts on the wheel face (ride with the car)
+  P.nuts = [];
+  for (let i=0;i<5;i++){
+    const a = i/5*Math.PI*2 + Math.PI/2; const n = hexNut(); faceAcross(n);
+    n.position.copy(t.pos); n.position[S] = hubX; n.position.y += Math.sin(a)*0.065; n.position[L] += Math.cos(a)*0.065;
+    n.userData = {i, home:n.position.clone(), state:0}; reg(car, n); P.nuts.push(n);
+    tappable(n, 'nut', n, {i}); pad(n, 0.034, 'nut', n, {i});
+  }
+  // hubcap tray for the nuts, lug wrench, jack, chocks (on the floor)
+  reg(props, new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.14,0.03,32), M.cream), 'tray').position.copy(at(side*1.35, t.pos[L] + geo.frontSign*0.2, 0.015));
+  const wrench = new THREE.Group(); const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.012,0.012,0.42,10), M.steel); arm.rotation.x = Math.PI/2; wrench.add(arm);
+  const sock = new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.05,10), M.dark); sock.rotation.z = Math.PI/2; sock.position.z = -0.2; wrench.add(sock);
+  wrench.position.copy(at(side*1.0, t.pos[L] - geo.frontSign*0.1, 0.03)); wrench.rotation.y = L === 'z' ? 0 : Math.PI/2; reg(props, wrench, 'wrench');
+  const jack = new THREE.Group(); const jb = new THREE.Mesh(new THREE.CylinderGeometry(0.09,0.11,0.16,20), M.red); jb.position.y = 0.08; jack.add(jb);
+  const piston = new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.16,16), M.steel); piston.position.y = 0.16; jack.add(piston); P.piston = piston;
+  const saddle = new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.02,16), M.dark); saddle.position.y = 0.24; jack.add(saddle); P.saddle = saddle;
+  jack.position.copy(at(side*0.62, t.pos[L] - geo.frontSign*0.55, 0)); reg(props, jack, 'jack'); P.jackHome = jack.position.clone(); tappable(jack, 'jack', jack); pad(jack, 0.3, 'jack', jack).position.y = 0.2;
+  const o = geo.opposite;
+  P.chocks = [1,-1].map(d => { const w = wedge(); w.position.copy(at(o.pos[S], o.pos[L] + d*(geo.wheelR+0.02), 0));
+    w.rotation.y = L === 'z' ? (d>0 ? -Math.PI/2 : Math.PI/2) : (d>0 ? 0 : Math.PI); reg(props, w); return w; });
+
+  // --- oil change props. the engine is at the back ---
+  const rearL = -geo.frontSign*(geo.carLen/2 - 0.95);
+  P.stands = [1,-1].map(d => { const g = new THREE.Group(); const base = new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.2,0.04,4), M.red); base.position.y=0.02; g.add(base);
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.04,0.3,12), M.red); post.position.y=0.19; g.add(post);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(0.08,0.03,0.12), M.dark); top.position.y = 0.35; g.add(top);
+    g.position.copy(at(d*0.72, rearL + geo.frontSign*0.5, 0)); reg(props, g); return g; });
+  const floorY = surfaceY(0.1, rearL, false);
+  const plug = hexNut(0.02, 0.02, M.steel); plug.position.copy(at(0.1, rearL, floorY - 0.012)); plug.userData.home = plug.position.clone(); reg(car, plug, 'plug'); tappable(plug, 'plug', plug); pad(plug, 0.07, 'plug', plug);
+  const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.024,0.024,0.004,16), M.oil); hole.position.copy(at(0.1, rearL, floorY - 0.001)); reg(car, hole, 'plugHole'); pad(hole, 0.07, 'hole', hole);
+  const washer = new THREE.Mesh(new THREE.TorusGeometry(0.022,0.004,8,24), M.gold); washer.rotation.x = Math.PI/2; washer.position.copy(at(0.1, rearL, floorY - 0.004)); reg(car, washer, 'washer'); P.washerHome = washer.position.clone();
+  const pan = new THREE.Group(); const panM = new THREE.Mesh(new THREE.CylinderGeometry(0.27,0.24,0.09,40,1,true), new THREE.MeshStandardMaterial({color:0x3a4350, metalness:0.6, roughness:0.4, side:THREE.DoubleSide, envMapIntensity:0.8})); panM.position.y = 0.045; pan.add(panM);
+  const panB = new THREE.Mesh(new THREE.CircleGeometry(0.24,40), M.dark); panB.rotation.x = -Math.PI/2; panB.position.y = 0.002; pan.add(panB);
+  P.oilLevel = new THREE.Mesh(new THREE.CircleGeometry(0.235,40), M.oil); P.oilLevel.rotation.x = -Math.PI/2; P.oilLevel.position.y = 0.012; pan.add(P.oilLevel);
+  pan.position.copy(at(0.1, rearL, 0)); reg(props, pan, 'pan'); P.panHome = pan.position.clone();
+  reg(props, new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.012,1,8), M.oil), 'stream').scale.y = 0.001;
+  const fL = rearL + geo.frontSign*0.15, fS = side*0.42, fY = surfaceY(fS, fL, false);
+  const filter = new THREE.Group(); const fb = new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,0.1,24), M.cream); filter.add(fb);
+  const fband = new THREE.Mesh(new THREE.CylinderGeometry(0.046,0.046,0.03,24), M.teal); fband.position.y = 0.02; filter.add(fband);
+  filter.position.copy(at(fS, fL, fY - 0.05)); faceAcross(filter); filter.userData.home = filter.position.clone(); reg(car, filter, 'filter'); tappable(filter, 'filter', filter); pad(filter, 0.11, 'filter', filter);
+  // fill cap, funnel, dipstick on the engine lid, oil bottle on the floor
+  const cL = P.tankPos[L], cS = P.tankPos[S], cY = P.tankPos.y + 0.06;
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.025,24), M.gold); cap.position.copy(at(cS, cL, cY + 0.012)); cap.userData.home = cap.position.clone(); reg(car, cap, 'cap'); tappable(cap, 'cap', cap); pad(cap, 0.08, 'cap', cap);
+  const funnel = new THREE.Mesh(new THREE.ConeGeometry(0.08,0.14,24,1,true), new THREE.MeshStandardMaterial({color:0xE8B33A, roughness:0.5, side:THREE.DoubleSide, envMapIntensity:0.8})); funnel.position.copy(cap.position).add(new THREE.Vector3(0,0.085,0)); reg(car, funnel, 'funnel');
+  reg(car, new THREE.Mesh(new THREE.CylinderGeometry(0.006,0.01,0.3,8), M.oilNew), 'pour').scale.y = 0.001; P.pour.position.copy(funnel.position).add(new THREE.Vector3(0,0.2,0));
+  const dip = new THREE.Group(); const dh = new THREE.Mesh(new THREE.TorusGeometry(0.025,0.006,8,20), M.gold); dh.position.y = 0.2; dip.add(dh); const dr = new THREE.Mesh(new THREE.CylinderGeometry(0.004,0.004,0.36,8), M.steel); dip.add(dr);
+  const dS = cS + side*0.14, dY = cY; dip.position.copy(at(dS, cL + geo.frontSign*0.02, dY - 0.12)); dip.userData.home = dip.position.clone(); reg(car, dip, 'dip'); tappable(dip, 'dip', dip); pad(dip, 0.09, 'dip', dip).position.y = 0.2;
+  const bottle = new THREE.Group(); const bb = new THREE.Mesh(new THREE.BoxGeometry(0.1,0.22,0.06), M.teal); bb.position.y = 0.11; bottle.add(bb); const bn = new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.06,12), M.dark); bn.position.set(0.03,0.25,0); bottle.add(bn);
+  bottle.position.copy(at(side*1.5, rearL, 0)); bottle.userData.home = bottle.position.clone(); reg(props, bottle, 'bottle'); tappable(bottle, 'bottle', bottle); pad(bottle, 0.16, 'bottle', bottle).position.y = 0.12;
+  P.capWorldY = cY;
+  P.bottleHomeFill = at(side*1.45, rearL, 0);
+}
+
+/* ---------- the engine lid: cut the deck out of the body, hang a hinged lid, put an engine underneath ---------- */
+const clipPlanes = [];
+function buildEngineBay(){
+  const F = geo.frontSign, L = geo.lengthAxis, S = geo.sideAxis;
+  // lid footprint, measured off this model: from the base of the rear window to just ahead of the tail
+  const lidFront = -F*1.47, lidBack = -F*1.99, halfW = 0.52, floorY = 0.8;
+  const n = (s,l,y) => at(s,l,y).normalize();
+  clipPlanes.push(
+    new THREE.Plane(n(0,0,-1), floorY),                 // above the deck line
+    new THREE.Plane(n(0,F,0), 1.47),                    // behind the hinge
+    new THREE.Plane(n(0,-F,0), -1.99),                  // ahead of the tail
+    new THREE.Plane(n(1,0,0), -halfW), new THREE.Plane(n(-1,0,0), -halfW));
+  let paint = null, best = 0; const seen = new Map();
+  modelRoot.traverse(o => {
+    if (!o.isMesh || o === P.wheel || P.wheel.getObjectById(o.id)) return;
+    const count = o.geometry.attributes.position.count; if (count > best){ best = count; paint = o.material; }
+    if (!seen.has(o.material)){ const m = o.material.clone(); m.clippingPlanes = clipPlanes; m.clipIntersection = true; seen.set(o.material, m); }
+    o.material = seen.get(o.material);
+  });
+  const paintMat = paint ? paint.clone() : M.dark; paintMat.clippingPlanes = null;
+  // open-top bay: floor and four walls, drawn from the inside
+  const bayMat = new THREE.MeshStandardMaterial({color:0x15181d, roughness:0.9, metalness:0.1, envMapIntensity:0.4});
+  const bay = new THREE.Group(); car.add(bay); P.bay = bay;
+  const lenMid = -F*1.73, lenSpan = 0.52, h = 0.42, bayFloor = 0.48;
+  const mk = (w,hh,pos,rot) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w,hh), bayMat); m.position.copy(pos); m.rotation.set(rot[0],rot[1],rot[2]); bay.add(m); };
+  if (L === 'z'){
+    mk(halfW*2, lenSpan, at(0,lenMid,bayFloor), [-Math.PI/2,0,0]);
+    mk(halfW*2, h, at(0, lidFront, bayFloor+h/2), [0, F>0?Math.PI:0, 0]);
+    mk(halfW*2, h, at(0, lidBack, bayFloor+h/2), [0, F>0?0:Math.PI, 0]);
+    mk(lenSpan, h, at(halfW, lenMid, bayFloor+h/2), [0,-Math.PI/2,0]); mk(lenSpan, h, at(-halfW, lenMid, bayFloor+h/2), [0,Math.PI/2,0]);
+  } else {
+    mk(lenSpan, halfW*2, at(0,lenMid,bayFloor), [-Math.PI/2,0,0]);
+    mk(halfW*2, h, at(0, lidFront, bayFloor+h/2), [0, F>0?-Math.PI/2:Math.PI/2, 0]);
+    mk(halfW*2, h, at(0, lidBack, bayFloor+h/2), [0, F>0?Math.PI/2:-Math.PI/2, 0]);
+    mk(lenSpan, h, at(halfW, lenMid, bayFloor+h/2), [0,Math.PI,0]); mk(lenSpan, h, at(-halfW, lenMid, bayFloor+h/2), [0,0,0]);
+  }
+  // a simple air cooled flat six: block, big fan housing facing the rear window, intake box, oil tank on the right
+  const eng = new THREE.Group(); car.add(eng); P.eng = eng;
+  const block = new THREE.Mesh(L==='z' ? new THREE.BoxGeometry(0.9,0.14,0.42) : new THREE.BoxGeometry(0.42,0.14,0.9), M.dark); block.position.copy(at(0, lenMid, bayFloor+0.07)); eng.add(block);
+  const fan = new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.26,32), new THREE.MeshStandardMaterial({color:0x202428, roughness:0.6, metalness:0.4, envMapIntensity:0.8})); if (L==='z') fan.rotation.x = Math.PI/2; else fan.rotation.z = Math.PI/2; fan.position.copy(at(0, lenMid + F*0.1, bayFloor+0.24)); eng.add(fan);
+  const fanRing = new THREE.Mesh(new THREE.TorusGeometry(0.15,0.012,8,40), M.steel); if (L==='x') fanRing.rotation.y = Math.PI/2; fanRing.position.copy(at(0, lenMid + F*0.235, bayFloor+0.24)); eng.add(fanRing);
+  for (let i=0;i<5;i++){ const bl = new THREE.Mesh(new THREE.BoxGeometry(0.03,0.26,0.012), M.steel); bl.position.copy(fanRing.position); bl.rotation[L==='z'?'z':'x'] = i/5*Math.PI; if (L==='x') bl.rotation.y = Math.PI/2; eng.add(bl); }
+  const intake = new THREE.Mesh(L==='z' ? new THREE.BoxGeometry(0.34,0.1,0.22) : new THREE.BoxGeometry(0.22,0.1,0.34), new THREE.MeshStandardMaterial({color:0x2a2e34, roughness:0.7, envMapIntensity:0.6})); intake.position.copy(at(-geo.target.side*0.27, lenMid - F*0.1, bayFloor+0.19)); eng.add(intake);
+  const tank = new THREE.Mesh(L==='z' ? new THREE.BoxGeometry(0.24,0.16,0.3) : new THREE.BoxGeometry(0.3,0.16,0.24), new THREE.MeshStandardMaterial({color:0x3a3f46, roughness:0.5, metalness:0.5, envMapIntensity:0.8})); tank.position.copy(at(geo.target.side*0.33, lenMid - F*0.08, bayFloor+0.22)); eng.add(tank);
+  P.tankPos = tank.position.clone(); P.tankPos.y += 0.02;
+  for (let i=0;i<3;i++){ const hose = new THREE.Mesh(new THREE.CylinderGeometry(0.018,0.018,0.5,10), M.dark); hose.rotation.z = Math.PI/2; if (L==='x') hose.rotation.y = Math.PI/2; hose.position.copy(at(0, lenMid - F*(0.05+i*0.09), bayFloor+0.16+i*0.02)); eng.add(hose); }
+  // the hinged lid: a slab in the body paint with louvers, hinged at its front edge
+  const lidG = new THREE.Group(); lidG.position.copy(at(0, lidFront, 0.965)); car.add(lidG); P.lid = lidG;
+  const slab = new THREE.Mesh(L==='z' ? new THREE.BoxGeometry(halfW*2+0.02,0.03,lenSpan+0.04) : new THREE.BoxGeometry(lenSpan+0.04,0.03,halfW*2+0.02), paintMat); slab.position.copy(at(0, -F*(lenSpan/2+0.01), -0.015)); lidG.add(slab);
+  const louverMat = new THREE.MeshStandardMaterial({color:0x111318, roughness:0.8, envMapIntensity:0.4});
+  for (let i=0;i<9;i++){ const lv = new THREE.Mesh(L==='z' ? new THREE.BoxGeometry(0.46,0.012,0.028) : new THREE.BoxGeometry(0.028,0.012,0.46), louverMat); lv.position.copy(at(0, -F*(0.1+i*0.045), 0.006)); lidG.add(lv); }
+  // closed = the slab tilts down toward the tail by the deck's slope; open = the rear edge swings up. find the signs by testing
+  const tiltMag = Math.atan2(0.08, lenSpan), ax = S === 'z' ? 'z' : 'x', probe = new THREE.Object3D(); probe.position.copy(at(0, -F*lenSpan, 0)); lidG.add(probe);
+  const tip = new THREE.Vector3(); const rearY = a => { lidG.rotation[ax] = a; lidG.updateMatrixWorld(true); probe.getWorldPosition(tip); return tip.y; };
+  P.lidClosed = rearY(tiltMag) < rearY(-tiltMag) ? tiltMag : -tiltMag;
+  P.lidOpen = P.lidClosed - Math.sign(P.lidClosed) * 1.15;
+  lidG.remove(probe); lidG.rotation[ax] = P.lidClosed;
+}
+
+function hideAll(){ allProps.forEach(o => o.visible = false); }
+function show(...names){ names.forEach(n => { const o = P[n]; if (Array.isArray(o)) o.forEach(x => x.visible = true); else if (o) o.visible = true; }); }
+
+/* ---------- state helpers ---------- */
+function liftCar(h, dur=1.4){ return tween(car.position, {y:h}, dur); }
+function lid(open, dur=1.2){ const ax = geo.sideAxis === 'z' ? 'z' : 'x'; const o = {}; o[ax] = open ? P.lidOpen : P.lidClosed; return tween(P.lid.rotation, o, dur); }
+function jacked(h){ car.position.y = h; P.piston.position.y = 0.16 + h*0.6; P.saddle.position.y = 0.24 + h*0.6; }
+function resetCarState(){
+  car.position.y = 0; P.wheelRig.position.copy(P.wheelHome);
+  P.nuts.forEach(n => { n.position.copy(n.userData.home); faceAcross(n); n.scale.setScalar(1); n.userData.state = 0; });
+  wheelGlow(false);
+  P.piston.position.y = 0.16; P.saddle.position.y = 0.24; P.jack.position.copy(P.jackHome);
+  P.plug.position.copy(P.plug.userData.home); P.plug.rotation.set(0,0,0); P.stream.scale.y = 0.001; P.oilLevel.scale.setScalar(0.01);
+  P.washer.position.copy(P.washerHome); P.pan.position.copy(P.panHome);
+  P.filter.position.copy(P.filter.userData.home); faceAcross(P.filter); P.filter.children[0].material = M.cream; P.filter.children[1].material = M.teal;
+  P.cap.position.copy(P.cap.userData.home); lid(false, 0.01); P.bottle.position.copy(P.bottle.userData.home); P.bottle.rotation.set(0,0,0); P.pour.scale.y = 0.001; P.dip.position.copy(P.dip.userData.home);
+  hideAll(); setFocus(null);
+}
+const toastEl = $('toast'); let toastT;
+function toast(msg){ toastEl.textContent = msg; toastEl.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>toastEl.classList.remove('show'), 1800); }
+function wheelGlow(on){ P.wheel.traverse(o => { if (o.isMesh && o.material.emissive) { o.material.emissive.setHex(on ? 0xE8B33A : 0); o.material.emissiveIntensity = 0.05; }; }); }
+function nutsToTray(){ P.nuts.forEach((n,i) => { n.position.copy(P.tray.position).add(new THREE.Vector3((i-2)*0.05, 0.03, 0)).sub(car.position); n.rotation.set(0,0,0); n.visible = true; }); }
+
+/* camera presets as [position, target], in car terms (side, length, height) */
+const rearL = () => -geo.frontSign*(geo.carLen/2 - 0.95);
+const cam = {
+  overview: () => [at(geo.target.side*4.6, geo.frontSign*4.2, 1.9), at(0,0,0.6)],
+  wheel:    () => [at(geo.target.side*3.0, geo.frontSign*2.4, 1.0), at(geo.target.side*0.7, geo.target.pos[geo.lengthAxis], 0.35)],
+  wheelOut: () => [at(geo.target.side*3.8, geo.frontSign*3.2, 1.2), at(geo.target.side*1.0, geo.target.pos[geo.lengthAxis], 0.35)],
+  wheelClose:() => [at(geo.target.side*2.1, geo.frontSign*1.5, 0.7), at(geo.target.side*0.75, geo.target.pos[geo.lengthAxis], 0.33)],
+  jack:     () => [at(geo.target.side*2.8, geo.frontSign*0.2, 0.6), at(geo.target.side*0.7, geo.target.pos[geo.lengthAxis]-geo.frontSign*0.5, 0.25)],
+  jackRear: () => [at(geo.target.side*2.8, -geo.frontSign*0.6, 0.6), at(geo.target.side*0.7, rearL()+geo.frontSign*0.3, 0.25)],
+  chocks:   () => [at(-geo.target.side*3.2, -geo.frontSign*2.6, 1.1), at(geo.opposite.pos[geo.sideAxis]*0.8, geo.opposite.pos[geo.lengthAxis], 0.3)],
+  rear:     () => [at(geo.target.side*3.4, -geo.frontSign*4.0, 1.5), at(0, -geo.frontSign*1.4, 0.5)],
+  under:    () => [at(geo.target.side*1.5, -geo.frontSign*2.7, 0.1), at(0.1, rearL(), 0.3)],
+  filter:   () => [at(geo.target.side*2.6, -geo.frontSign*2.6, 0.45), at(geo.target.side*0.45, rearL()+geo.frontSign*0.15, 0.3)],
+  deck:     () => [at(geo.target.side*1.9, -geo.frontSign*3.4, 2.1), at(geo.target.side*0.1, -geo.frontSign*1.75, 0.8)],
+};
+
+/* ---------- lessons ---------- */
+const nutOrder = [0,2,4,1,3]; // star pattern
+const lessons = {
+tire: {
+  name: 'Change a tire', eyebrow: 'LESSON 01  /  FLAT TIRE',
+  steps: [
+    { title:'Get safe before you get tools.', cam:'overview',
+      text:'Pull well off the road onto flat, solid ground. Hazards on, parking brake on, and put the car in park (or first gear on a manual like this one). Everyone out of the car and away from traffic.',
+      note:['Why flat ground','A jack on a slope or soft dirt can tip. If it doesn\'t feel stable, don\'t lift it. Call for help instead.'],
+      enter(){ resetCarState(); } },
+    { title:'Grab the kit and chock a wheel.', cam:'chocks', tools:['spare tire','jack','lug wrench','wheel chocks','gloves','flashlight'],
+      text:'Find the spare, jack and lug wrench. Most cars hide them under the trunk floor. On this 911 the trunk is up front. Wedge chocks (or a couple of rocks) against the wheel diagonally opposite the flat so the car can\'t roll.',
+      enter(){ resetCarState(); show('chocks','wrench','nuts'); setFocus(P.chocks[0], 0.5); } },
+    { title:'Loosen the lug nuts while the wheel is still on the ground.', cam:'wheelClose',
+      text:'Fit the wrench on each nut and turn <b>counterclockwise</b> (lefty loosey). Just crack them loose, about half a turn. Don\'t take them off yet. The ground is holding the wheel still, so it can\'t spin on you.',
+      note:['Stuck nut?','Stand on the wrench arm and use your body weight. Push down, never pull up toward your face.'],
+      task:{ kind:'loosen', prompt:'Tap each of the 5 lug nuts to loosen it', total:5 },
+      enter(){ resetCarState(); show('chocks','wrench','nuts'); setFocus(P.nuts[0], 0.16); } },
+    { title:'Jack it up at the right spot.', cam:'jack',
+      text:'Put the jack under the car\'s jack point, a reinforced spot on the frame just behind the front wheel (your manual shows exactly where). Raise it until the flat tire is about 6 inches off the ground.',
+      note:['Never under the car','A jack only holds the car up. It is not safe to put any part of your body underneath while it is lifted.'],
+      task:{ kind:'jack', prompt:'Tap the jack to raise the car', total:1 },
+      enter(){ resetCarState(); show('chocks','wrench','nuts','jack'); setFocus(P.jack, 0.45); } },
+    { title:'Take the nuts all the way off.', cam:'wheelClose',
+      text:'Now spin each nut off completely. Keep them together in the hubcap or your pocket so none roll into the storm drain. You will need all five.',
+      task:{ kind:'remove', prompt:'Tap each nut to take it off', total:5 },
+      enter(){ resetCarState(); show('chocks','wrench','nuts','jack','tray','hub'); jacked(0.16); setFocus(P.nuts[0], 0.16); } },
+    { title:'Pull the flat off.', cam:'wheelOut',
+      text:'Grab the tire at 9 and 3 o\'clock and pull it straight toward you. It\'s heavy and might stick, wiggle it. Lay it flat on the ground so it can\'t roll away.',
+      task:{ kind:'pull', prompt:'Tap the wheel to pull it off', total:1 },
+      enter(){ resetCarState(); show('chocks','wrench','jack','tray','hub'); jacked(0.16); nutsToTray(); wheelGlow(true); setFocus(P.wheelRig, 0.9); } },
+    { title:'Hang the spare and hand tighten in a star.', cam:'wheelOut',
+      text:'Line the spare\'s holes up with the studs and push it on. Thread every nut on by hand, then snug them in a <b>star pattern</b>, skipping a nut each time. That pulls the wheel on evenly so it doesn\'t sit crooked.',
+      task:{ kind:'star', prompt:'Tap the nuts in star order: 1, 3, 5, 2, 4', total:5 },
+      enter(){ resetCarState(); show('chocks','wrench','jack','tray','hub','nuts'); jacked(0.16); P.nuts.forEach(n=>{ n.scale.setScalar(0.8); }); setFocus(P.nuts[0], 0.16); } },
+    { title:'Lower the car, then tighten for real.', cam:'wheelClose',
+      text:'Let the jack down slowly until the tire takes the weight, then pull the jack out. Now tighten the nuts hard, same star pattern. On this car that\'s about 95 ft lb, a solid lean on the wrench.',
+      note:['Space saver spare?','The little donut spare is good for about 50 miles and 50 mph. Get the real tire fixed soon.'],
+      task:{ kind:'lower', prompt:'Tap the jack to lower the car', total:1 },
+      enter(){ resetCarState(); show('chocks','wrench','jack','nuts','hub'); jacked(0.16); setFocus(P.jack, 0.45); } },
+    { title:'Pack up and check the pressure.', cam:'overview',
+      text:'Chocks, jack, wrench and the flat all go back in the trunk. Check the spare\'s air pressure at the next gas station, spares lose air sitting around. Then get the flat patched or replaced.',
+      enter(){ resetCarState(); } },
+  ],
+  quiz: [
+    { q:'When do you loosen the lug nuts?', a:['After the car is jacked up','While the wheel is still on the ground','After the spare is on'], c:1, why:'The ground holds the wheel still so it can\'t spin while you crack the nuts loose.' },
+    { q:'Which wheel gets the chocks?', a:['The flat one','The one diagonally opposite the flat','Any front wheel'], c:1, why:'Chocking the opposite corner keeps the car from rolling while that corner is in the air.' },
+    { q:'How do you tighten the nuts?', a:['In a circle, one after the other','In a star pattern, skipping one each time','Tightest one first'], c:1, why:'The star pattern pulls the wheel on evenly so it sits flat against the hub.' },
+  ],
+},
+oil: {
+  name: 'Change the oil', eyebrow: 'LESSON 02  /  OIL CHANGE',
+  steps: [
+    { title:'Warm it up, then shut it off.', cam:'rear',
+      text:'Run the engine for about 5 minutes. Warm oil is thinner and carries the gunk out with it. Then park on flat ground, parking brake on, engine off. Give it a few minutes so the oil isn\'t hot enough to burn you.',
+      note:['Engine\'s in the back','On a 911 the engine lives behind the rear wheels. Most cars have it up front, so the drain plug moves too. Your manual shows where.'],
+      enter(){ resetCarState(); } },
+    { title:'Gather everything first.', cam:'rear', tools:['new oil (right grade)','new oil filter','drain pan','socket wrench','filter wrench','crush washer','funnel','gloves','rags'],
+      text:'Check the manual for the oil grade and how much it takes. Most cars take 4 to 6 quarts. A classic 911 like this one carries a separate oil tank and swallows around 12 quarts, so bring enough.',
+      enter(){ resetCarState(); show('pan','bottle'); } },
+    { title:'Lift it and set jack stands.', cam:'jackRear',
+      text:'Jack up the rear and slide jack stands under the frame on both sides, then lower the car onto the stands. Give it a shove. If it rocks, fix it before you go anywhere near underneath.',
+      note:['The one rule','Never get under a car that\'s held up only by a jack. Jacks slip. Stands don\'t.'],
+      task:{ kind:'stands', prompt:'Tap the jack to lift the car onto stands', total:1 },
+      enter(){ resetCarState(); show('jack','pan','bottle'); P.jack.position.copy(at(geo.target.side*0.62, rearL()+geo.frontSign*0.3, 0)); P.pan.position.copy(at(geo.target.side*1.4, rearL(), 0)); setFocus(P.jack, 0.45); } },
+    { title:'Find the drain plug and set the pan.', cam:'under',
+      text:'Slide under and look at the lowest point of the engine. The drain plug is a single bolt, usually with a washer. Put the pan under it, a little off to the side, because the oil shoots out at an angle at first.',
+      enter(){ resetCarState(); show('stands','pan','plug'); car.position.y = 0.3; setFocus(P.plug, 0.25); } },
+    { title:'Pull the plug and let it drain.', cam:'under',
+      text:'Loosen the plug with the wrench, counterclockwise. Do the last few turns by hand and pull it away quick so the oil doesn\'t run down your arm. Let it drain 5 to 10 minutes, until it\'s dripping.',
+      task:{ kind:'plug', prompt:'Tap the drain plug to pull it', total:1 },
+      enter(){ resetCarState(); show('stands','pan','plug'); car.position.y = 0.3; setFocus(P.plug, 0.25); } },
+    { title:'Put the plug back with a fresh washer.', cam:'under',
+      text:'Wipe the plug clean and slide a new crush washer on. Thread it in by hand so you don\'t cross the threads, then snug it with the wrench. Firm, not Hulk. Overtightening strips the pan.',
+      task:{ kind:'plugBack', prompt:'Tap the drain hole to put the plug back', total:1 },
+      enter(){ resetCarState(); show('stands','pan','plug','plugHole','washer'); car.position.y = 0.3; P.oilLevel.scale.setScalar(1); P.plug.position.copy(P.pan.position).add(new THREE.Vector3(0.12,0.03,0)).sub(car.position); P.washer.position.copy(P.plug.position).add(new THREE.Vector3(-0.08,0,0.05)); setFocus(P.plugHole, 0.22); } },
+    { title:'Swap the filter.', cam:'filter',
+      text:'Slide the pan under the filter, it\'s full of oil too. Turn it counterclockwise with the filter wrench, then by hand. Wipe the mating surface clean and check the old rubber gasket came off with it.',
+      task:{ kind:'filterOff', prompt:'Tap the filter to spin it off', total:1 },
+      enter(){ resetCarState(); show('stands','pan','plug','filter'); car.position.y = 0.3; P.oilLevel.scale.setScalar(1); P.pan.position.copy(P.filter.userData.home).setY(0); setFocus(P.filter, 0.3); } },
+    { title:'Oil the gasket, spin the new one on.', cam:'filter',
+      text:'Dip a finger in new oil and smear it around the new filter\'s rubber gasket so it seals and doesn\'t stick. Spin it on by hand until the gasket touches, then another three quarters of a turn. No wrench needed.',
+      task:{ kind:'filterOn', prompt:'Tap the spot to fit the new filter', total:1 },
+      enter(){ resetCarState(); show('stands','pan','plug','filter'); car.position.y = 0.3; P.oilLevel.scale.setScalar(1); P.pan.position.copy(P.filter.userData.home).setY(0); P.filter.position.copy(P.filter.userData.home).add(new THREE.Vector3(0,-0.3,0)); P.filter.children[0].material = M.teal; P.filter.children[1].material = M.cream; setFocus(P.filter, 0.3); } },
+    { title:'Lower the car and fill it up.', cam:'deck',
+      text:'Jack it off the stands, pull them out, and lower it. Open the engine lid, pop the oil cap and set the funnel in. Pour in a little less than the full amount, then check and top up. Too much oil is as bad as too little.',
+      task:{ kind:'fill', prompt:'Tap the cap, then tap the bottle to pour', total:2 },
+      enter(){ resetCarState(); show('cap','bottle','dip'); P.bottle.position.copy(P.bottleHomeFill); lid(true, 1.4); setFocus(P.cap, 0.25); } },
+    { title:'Run it, check it, log it.', cam:'deck',
+      text:'Start the engine for 30 seconds and peek under for drips at the plug and filter. Shut it off, wait a minute, pull the dipstick, wipe it, dip it again and read the level. Top up to the full mark.',
+      note:['911 quirk','An old air cooled 911 reads its dipstick with the engine warm and idling, not off. Every car has its own rule, so read the manual.'],
+      task:{ kind:'dip', prompt:'Tap the dipstick to check the level', total:1 },
+      enter(){ resetCarState(); show('cap','dip'); lid(true, 0.01); setFocus(P.dip, 0.3); } },
+    { title:'Old oil goes back to the store.', cam:'overview',
+      text:'Pour the used oil into the empty jugs and take it to any auto parts store. They take it for free and recycle it. Never down a drain or on the ground, one gallon can foul a million gallons of water. Write down the mileage so you know when the next one is due.',
+      enter(){ resetCarState(); show('bottle'); } },
+  ],
+  quiz: [
+    { q:'What holds the car up while you\'re underneath?', a:['The jack','Jack stands','A friend'], c:1, why:'The jack lifts it, the stands hold it. Never go under a car on a jack alone.' },
+    { q:'Why warm up the engine first?', a:['So the plug is easier to turn','Warm oil drains faster and carries dirt out','It isn\'t needed'], c:1, why:'Warm oil is thinner, so it drains quicker and takes more of the gunk with it.' },
+    { q:'Where does used oil go?', a:['Down the storm drain','In the trash','To an auto parts store for recycling'], c:2, why:'Stores take used oil for free. One gallon can contaminate a million gallons of water.' },
+  ],
+},
+};
+
+/* ---------- lesson runner ---------- */
+let lesson = null, stepIndex = 0, taskState = null, finished = false;
+const cardEl = $('card'), dotsEl = $('dots'), nextBtn = $('next'), backBtn = $('back'), skipBtn = $('skip');
+
+function startLesson(key){
+  lesson = lessons[key]; stepIndex = 0; finished = false;
+  $('tabTire').setAttribute('aria-pressed', key==='tire'); $('tabOil').setAttribute('aria-pressed', key==='oil');
+  goStep(0, true);
+}
+function goStep(i, instant){
+  stepIndex = i; finished = false; const st = lesson.steps[i];
+  st.enter();
+  const [pos, tgt] = cam[st.cam]();
+  if (instant){ camera.position.copy(pos); controls.target.copy(tgt); } else flyTo(pos, tgt);
+  taskState = st.task ? { kind:st.task.kind, done:0, total:st.task.total, order:0, busy:false } : null;
+  renderCard(); renderDots();
+}
+function renderDots(){
+  dotsEl.innerHTML = '';
+  lesson.steps.forEach((s,i) => { const d = document.createElement('i'); if (i < stepIndex) d.className='done'; if (i === stepIndex && !finished) d.className='now'; dotsEl.appendChild(d); });
+  const q = document.createElement('i'); if (finished) q.className = 'now'; dotsEl.appendChild(q);
+}
+function renderCard(){
+  const st = lesson.steps[stepIndex];
+  let html = `<div class="eyebrow">${lesson.eyebrow}  /  STEP ${String(stepIndex+1).padStart(2,'0')} OF ${String(lesson.steps.length).padStart(2,'0')}</div><h1>${st.title}</h1>`;
+  if (st.task) html += `<div class="task" id="taskBox"><div class="ring" id="taskRing">0/${st.task.total}</div><div><b>Your turn</b><span id="taskPrompt">${st.task.prompt}</span></div></div>`;
+  html += `<p>${st.text}</p>`;
+  if (st.tools) html += `<div class="tools">${st.tools.map(t=>`<span>${t}</span>`).join('')}</div>`;
+  if (st.note) html += `<div class="note"><div class="eyebrow">${st.note[0]}</div>${st.note[1]}</div>`;
+  cardEl.innerHTML = html; cardEl.scrollTop = 0;
+  backBtn.disabled = stepIndex === 0; backBtn.style.visibility = stepIndex === 0 ? 'hidden' : 'visible';
+  nextBtn.textContent = stepIndex === lesson.steps.length-1 ? 'Quick check' : 'Next';
+  updateTaskUI();
+}
+function updateTaskUI(){
+  if (!taskState){ nextBtn.disabled = false; skipBtn.hidden = true; return; }
+  const done = taskState.done >= taskState.total;
+  const ring = $('taskRing'), box = $('taskBox');
+  if (ring) ring.textContent = done ? '✓' : `${taskState.done}/${taskState.total}`;
+  if (box) box.classList.toggle('done', done);
+  nextBtn.disabled = !done; skipBtn.hidden = done;
+}
+function taskProgress(n=1){ taskState.done = Math.min(taskState.total, taskState.done + n); updateTaskUI(); if (taskState.done >= taskState.total) { setFocus(null); toast('Nice. Hit Next.'); } }
+
+nextBtn.addEventListener('click', () => {
+  if (finished) return;
+  if (stepIndex < lesson.steps.length-1) goStep(stepIndex+1); else showQuiz();
+});
+backBtn.addEventListener('click', () => { if (finished){ finished=false; goStep(lesson.steps.length-1); } else if (stepIndex > 0) goStep(stepIndex-1); });
+skipBtn.addEventListener('click', () => { if (taskState){ taskState.done = taskState.total; updateTaskUI(); } });
+$('tabTire').addEventListener('click', () => startLesson('tire'));
+$('tabOil').addEventListener('click', () => startLesson('oil'));
+
+function showQuiz(){
+  finished = true; taskState = null; renderDots();
+  resetCarState(); const [p,t] = cam.overview(); flyTo(p,t);
+  let qi = 0, score = 0;
+  const ask = () => {
+    if (qi >= lesson.quiz.length){
+      const other = lesson === lessons.tire ? 'oil' : 'tire';
+      cardEl.innerHTML = `<div class="eyebrow">${lesson.eyebrow}  /  DONE</div><div class="score">${score}/${lesson.quiz.length}<span style="color:var(--gold)">.</span></div><h1>${score===lesson.quiz.length?'Pit crew material.':'Solid. Run it back if you want.'}</h1><p>Now go watch the real thing on the real car. Ask questions. That\'s what today is for.</p>`;
+      nextBtn.textContent = other === 'oil' ? 'Next lesson: oil' : 'Next lesson: tire'; nextBtn.disabled = false; skipBtn.hidden = true;
+      nextBtn.onclick = () => { nextBtn.onclick = null; startLesson(other); };
+      return;
+    }
+    const q = lesson.quiz[qi];
+    cardEl.innerHTML = `<div class="eyebrow">QUICK CHECK  /  ${qi+1} OF ${lesson.quiz.length}</div><h1>${q.q}</h1><div class="quiz" id="quiz">${q.a.map((a,i)=>`<button data-i="${i}">${a}</button>`).join('')}</div><p id="why" style="font-size:15px"></p>`;
+    nextBtn.disabled = true; skipBtn.hidden = true; backBtn.style.visibility = 'visible'; backBtn.disabled = false;
+    $('quiz').querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+      if ($('why').textContent) return;
+      const i = +b.dataset.i; b.classList.add(i===q.c ? 'right' : 'wrong');
+      if (i === q.c) score++; else $('quiz').children[q.c].classList.add('right');
+      $('why').textContent = q.why; nextBtn.disabled = false; nextBtn.textContent = qi === lesson.quiz.length-1 ? 'See score' : 'Next question';
+      nextBtn.onclick = () => { nextBtn.onclick = null; qi++; ask(); };
+    }));
+  };
+  ask();
+}
+
+/* ---------- tapping parts ---------- */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let downAt = null;
+renderer.domElement.addEventListener('pointerdown', e => { downAt = {x:e.clientX, y:e.clientY, t:performance.now()}; });
+renderer.domElement.addEventListener('pointerup', e => {
+  if (!downAt) return; const moved = Math.hypot(e.clientX-downAt.x, e.clientY-downAt.y); const dt = performance.now()-downAt.t; downAt = null;
+  if (moved > 10 || dt > 700 || !taskState || taskState.busy) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
+  ray.setFromCamera(ndc, camera);
+  const visible = hot.filter(o => { let p = o; while (p){ if (!p.visible) return false; p = p.parent; } return true; });
+  const hit = ray.intersectObjects(visible, false)[0];
+  if (!hit) return;
+  handleTap(hit.object.userData.tap, hit.object.userData.ref || hit.object);
+});
+function spin(obj, turns, dur=0.45, axis){ const ax = axis || spinAxis(); const o = {}; o[ax] = obj.rotation[ax] + turns*Math.PI*2; return tween(obj.rotation, o, dur); }
+const wait = ms => new Promise(r => setTimeout(r, reduceMotion ? 30 : ms));
+async function handleTap(tag, obj){
+  const k = taskState.kind; taskState.busy = true;
+  try {
+    if (k === 'loosen' && tag === 'nut'){ if (obj.userData.state) return; obj.userData.state = 1; setFocus(null); await spin(obj, -0.5); obj.position.add(sideVec(geo.target.side).multiplyScalar(0.006)); taskProgress(); }
+    else if (k === 'remove' && tag === 'nut'){ if (obj.userData.state === 2) return; obj.userData.state = 2; setFocus(null); spin(obj, -3, 0.9);
+      const to = P.tray.position.clone().add(new THREE.Vector3((obj.userData.i-2)*0.05, 0.03, 0)).sub(car.position); const up = obj.position.clone().add(sideVec(geo.target.side).multiplyScalar(0.25));
+      await tweenV3(obj.position, up, 0.35); await tweenV3(obj.position, to, 0.5); obj.rotation.set(0,0,0); taskProgress(); if (taskState.done >= taskState.total) wheelGlow(true); }
+    else if (k === 'pull' && tag === 'wheel'){ wheelGlow(false); setFocus(null); const out = P.wheelHome.clone().add(sideVec(geo.target.side).multiplyScalar(0.8)); await tweenV3(P.wheelRig.position, out, 0.9); const down = out.clone(); down.y = geo.wheelR - car.position.y + 0.01; await tweenV3(P.wheelRig.position, down, 0.6); taskProgress(); }
+    else if (k === 'star' && tag === 'nut'){ const want = nutOrder[taskState.order]; if (obj.userData.state) return;
+      if (obj.userData.i !== want){ const o = obj.position.clone(); await tweenV3(obj.position, o.clone().add(new THREE.Vector3(0,0.02,0)), 0.08); await tweenV3(obj.position, o, 0.08); toast(`Not that one. Skip a nut, go to number ${want+1}.`); setFocus(P.nuts[want], 0.16); return; }
+      obj.userData.state = 1; taskState.order++; await Promise.all([spin(obj, 2, 0.6), tween(obj.scale, {x:1,y:1,z:1}, 0.5)]); taskProgress(); if (taskState.order < 5) setFocus(P.nuts[nutOrder[taskState.order]], 0.16); }
+    else if (k === 'jack' && tag === 'jack'){ setFocus(null); await Promise.all([tween(P.piston.position, {y:0.256}, 1.5), tween(P.saddle.position, {y:0.336}, 1.5), liftCar(0.16, 1.5)]); taskProgress(); }
+    else if (k === 'lower' && tag === 'jack'){ setFocus(null); await Promise.all([tween(P.piston.position, {y:0.16}, 1.6), tween(P.saddle.position, {y:0.24}, 1.6), liftCar(0, 1.6)]); taskProgress(); }
+    else if (k === 'stands' && tag === 'jack'){ setFocus(null); await Promise.all([tween(P.piston.position, {y:0.352}, 1.5), tween(P.saddle.position, {y:0.432}, 1.5), liftCar(0.32, 1.5)]); show('stands'); P.stands.forEach(s => { s.scale.y = 0.5; tween(s.scale, {y:1}, 0.5); }); await wait(500); await Promise.all([liftCar(0.3, 0.6), tween(P.piston.position, {y:0.16}, 0.6), tween(P.saddle.position, {y:0.24}, 0.6)]); P.jack.visible = false; toast('On the stands. Rock it to be sure.'); taskProgress(); }
+    else if (k === 'plug' && tag === 'plug'){ setFocus(null); await spin(P.plug, -3, 0.9, 'y'); await tweenV3(P.plug.position, P.pan.position.clone().add(new THREE.Vector3(0.12,0.03,0)).sub(car.position), 0.5);
+      const top = P.plug.userData.home.y + car.position.y - 0.01, bot = 0.03; P.stream.position.copy(P.pan.position).setY((top+bot)/2); P.stream.scale.y = 0.001; await tween(P.stream.scale, {y: top-bot}, 0.3); await tween(P.oilLevel.scale, {x:1,y:1,z:1}, 2.4); await tween(P.stream.scale, {y:0.001}, 0.5); taskProgress(); }
+    else if (k === 'plugBack' && tag === 'hole'){ setFocus(null); await tweenV3(P.washer.position, P.plug.position.clone().add(new THREE.Vector3(0,0.03,0)), 0.3); await Promise.all([tweenV3(P.plug.position, P.plug.userData.home, 0.7), tweenV3(P.washer.position, P.washerHome, 0.7)]); await spin(P.plug, 2, 0.7, 'y'); taskProgress(); }
+    else if (k === 'filterOff' && tag === 'filter'){ setFocus(null); await spin(P.filter, -3, 1.0); await tweenV3(P.filter.position, P.filter.position.clone().add(new THREE.Vector3(0,-0.3,0)), 0.6); taskProgress(); }
+    else if (k === 'filterOn' && tag === 'filter'){ setFocus(null); await tweenV3(P.filter.position, P.filter.userData.home, 0.6); await spin(P.filter, 2.75, 0.9); taskProgress(); }
+    else if (k === 'fill' && tag === 'cap' && taskState.done === 0){ await tweenV3(P.cap.position, P.cap.position.clone().add(at(-geo.target.side*0.14, -geo.frontSign*0.12, 0.02)), 0.5); show('funnel'); setFocus(P.bottle, 0.35); taskProgress(); }
+    else if (k === 'fill' && tag === 'bottle' && taskState.done === 1){ setFocus(null); const over = P.funnel.position.clone().add(car.position).add(new THREE.Vector3(0,0.22,0)).add(at(geo.target.side*0.12,0,0)); await tweenV3(P.bottle.position, over, 0.6); await tween(P.bottle.rotation, {z: geo.target.side*1.5}, 0.5); P.pour.visible = true; P.pour.scale.y = 0.001; await tween(P.pour.scale, {y:1}, 0.3); await wait(1600); await tween(P.pour.scale, {y:0.001}, 0.3); P.pour.visible = false; await tween(P.bottle.rotation, {z:0}, 0.4); taskProgress(); }
+    else if (k === 'dip' && tag === 'dip'){ setFocus(null); const h = P.dip.position.clone(); await tweenV3(P.dip.position, h.clone().add(new THREE.Vector3(0,0.3,0)), 0.6); toast('Right at the full mark.'); await wait(900); await tweenV3(P.dip.position, h, 0.5); taskProgress(); }
+  } finally { if (taskState) taskState.busy = false; }
+}
+
+/* ---------- frame loop ---------- */
+const clock = new THREE.Clock(); const tmp = new THREE.Vector3();
+function frame(){
+  const dt = Math.min(clock.getDelta(), 0.1);
+  stepTweens(dt); controls.update();
+  if (clipPlanes.length) clipPlanes[0].constant = 0.8 + car.position.y;
+  if (focusTarget && focus.visible){ focusTarget.getWorldPosition(tmp); focus.position.copy(tmp); const pulse = focusSize * (1 + 0.12*Math.sin(performance.now()/300)); focus.scale.set(pulse,pulse,1); }
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+frame();
+})();
+</script>
+
+</body>
+</html>
