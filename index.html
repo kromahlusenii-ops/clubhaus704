@@ -728,7 +728,11 @@ renderer.domElement.addEventListener('pointerup', e => {
   ndc.set(((e.clientX-r.left)/r.width)*2-1, -((e.clientY-r.top)/r.height)*2+1);
   ray.setFromCamera(ndc, camera);
   const visible = hot.filter(o => { let p = o; while (p){ if (!p.visible) return false; p = p.parent; } return true; });
-  const hit = ray.intersectObjects(visible, false)[0];
+  const hits = ray.intersectObjects(visible, false);
+  // the whole wheel/hub mesh is one big tappable target (for the "pull the wheel" step) that
+  // sits right behind the small lug nut pads, so a closer, more specific hit (like a nut) wins
+  // over it even when the wheel/hub surface happens to be nearer along the ray.
+  const hit = hits.find(h => h.object.userData.tap !== 'wheel' && h.object.userData.tap !== 'hub') || hits[0];
   if (!hit) return;
   handleTap(hit.object.userData.tap, hit.object.userData.ref || hit.object);
 });
