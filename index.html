@@ -492,9 +492,9 @@ function nutsToTray(){ P.nuts.forEach((n,i) => { n.position.copy(P.tray.position
 const rearL = () => -geo.frontSign*(geo.carLen/2 - 0.95);
 const cam = {
   overview: () => [at(geo.target.side*4.6, geo.frontSign*4.2, 1.9), at(0,0,0.6)],
-  wheel:    () => [at(geo.target.side*3.0, geo.frontSign*2.4, 1.0), at(geo.target.side*0.7, geo.target.pos[geo.lengthAxis], 0.35)],
-  wheelOut: () => [at(geo.target.side*3.8, geo.frontSign*3.2, 1.2), at(geo.target.side*1.0, geo.target.pos[geo.lengthAxis], 0.35)],
-  wheelClose:() => [at(geo.target.side*2.1, geo.frontSign*1.5, 0.7), at(geo.target.side*0.75, geo.target.pos[geo.lengthAxis], 0.33)],
+  wheel:    () => [at(geo.target.side*3.0, geo.frontSign*2.4, 1.0 + car.position.y), at(geo.target.side*0.7, geo.target.pos[geo.lengthAxis], 0.35 + car.position.y)],
+  wheelOut: () => [at(geo.target.side*3.8, geo.frontSign*3.2, 1.2 + car.position.y), at(geo.target.side*1.0, geo.target.pos[geo.lengthAxis], 0.35 + car.position.y)],
+  wheelClose:() => [at(geo.target.side*2.1, geo.frontSign*1.5, 0.7 + car.position.y), at(geo.target.side*0.75, geo.target.pos[geo.lengthAxis], 0.33 + car.position.y)],
   jack:     () => [at(geo.target.side*2.8, geo.frontSign*0.2, 0.6), at(geo.target.side*0.7, geo.target.pos[geo.lengthAxis]-geo.frontSign*0.5, 0.25)],
   jackRear: () => [at(geo.target.side*2.8, -geo.frontSign*0.6, 0.6), at(geo.target.side*0.7, rearL()+geo.frontSign*0.3, 0.25)],
   chocks:   () => [at(-geo.target.side*3.2, -geo.frontSign*2.6, 1.1), at(geo.opposite.pos[geo.sideAxis]*0.8, geo.opposite.pos[geo.lengthAxis], 0.3)],
