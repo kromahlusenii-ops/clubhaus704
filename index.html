@@ -260,15 +260,12 @@ const focus = ring();
 let focusTarget = null, focusSize = 0.4;
 function setFocus(obj, size=0.4){ focusTarget = obj; focusSize = size; focus.visible = !!obj; }
 
-// a yellow ring + "TAP" tag that sits over a part, so it's unmistakable what to tap
+// a small yellow ring that sits snugly over one part, so it reads as "tap me" without needing text
 function tapHint(){
-  const c = document.createElement('canvas'); c.width = 160; c.height = 220; const g = c.getContext('2d');
-  g.strokeStyle = '#E8B33A'; g.lineWidth = 12; g.beginPath(); g.arc(80,146,58,0,Math.PI*2); g.stroke();
-  g.fillStyle = 'rgba(26,34,48,0.92)'; g.fillRect(16,4,128,42);
-  g.fillStyle = '#F2EAD9'; g.font = '700 28px "Geist Mono", ui-monospace, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
-  g.fillText('TAP', 80, 25);
+  const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+  g.strokeStyle = '#E8B33A'; g.lineWidth = 16; g.beginPath(); g.arc(64,64,48,0,Math.PI*2); g.stroke();
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c), transparent:true, depthTest:false}));
-  sp.center.set(0.5, 146/220); sp.renderOrder = 9; sp.scale.set(0.15, 0.15*220/160, 1);
+  sp.renderOrder = 9; sp.scale.set(0.058, 0.058, 1);
   return sp;
 }
 
@@ -540,7 +537,7 @@ tire: {
       text:'Fit the wrench on each nut and turn <b>counterclockwise</b> (lefty loosey). Just crack them loose, about half a turn. Don\'t take them off yet. The ground is holding the wheel still, so it can\'t spin on you.',
       note:['Stuck nut?','Stand on the wrench arm and use your body weight. Push down, never pull up toward your face.'],
       task:{ kind:'loosen', prompt:'Tap each of the 5 lug nuts to loosen it', total:5 },
-      enter(){ resetCarState(); show('chocks','wrench','nuts'); setFocus(P.nuts[0], 0.16); } },
+      enter(){ resetCarState(); show('chocks','wrench','nuts'); setFocus(null); } },
     { title:'Jack it up at the right spot.', cam:'jack',
       text:'Put the jack under the car\'s jack point, a reinforced spot on the frame just behind the front wheel (your manual shows exactly where). Raise it until the flat tire is about 6 inches off the ground.',
       note:['Never under the car','A jack only holds the car up. It is not safe to put any part of your body underneath while it is lifted.'],
@@ -549,7 +546,7 @@ tire: {
     { title:'Take the nuts all the way off.', cam:'wheelClose',
       text:'Now spin each nut off completely. Keep them together in the hubcap or your pocket so none roll into the storm drain. You will need all five.',
       task:{ kind:'remove', prompt:'Tap each nut to take it off', total:5 },
-      enter(){ resetCarState(); show('chocks','wrench','nuts','jack','tray','hub'); jacked(0.16); setFocus(P.nuts[0], 0.16); } },
+      enter(){ resetCarState(); show('chocks','wrench','nuts','jack','tray','hub'); jacked(0.16); setFocus(null); } },
     { title:'Pull the flat off.', cam:'wheelOut',
       text:'Grab the tire at 9 and 3 o\'clock and pull it straight toward you. It\'s heavy and might stick, wiggle it. Lay it flat on the ground so it can\'t roll away.',
       task:{ kind:'pull', prompt:'Tap the wheel to pull it off', total:1 },
